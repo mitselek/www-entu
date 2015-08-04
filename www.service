@@ -1,0 +1,31 @@
+[Unit]
+Description=Entu generic webpage engine
+After=etcd.service
+After=docker.service
+
+[Service]
+TimeoutStartSec=0
+KillMode=none
+Restart=always
+EnvironmentFile=/etc/environment
+ExecStartPre=-/usr/bin/docker kill wwwentu
+ExecStartPre=-/usr/bin/docker rm wwwentu
+ExecStartPre=/usr/bin/docker pull mitselek/www-entu:latest
+ExecStart=/usr/bin/docker run \
+          --name="wwwentu" \
+          --env="PORT=4000" \
+          --env="NEW_RELIC_APP_NAME=" \
+          --env="NEW_RELIC_LICENSE_KEY=" \
+          --env="NEW_RELIC_LOG=stdout" \
+          --env="NEW_RELIC_LOG_LEVEL=error" \
+          --env="NEW_RELIC_NO_CONFIG_FILE=true" \
+          --env="ENTU_USER=" \
+          --env="ENTU_KEY=" \
+          --volume="/data/wwwentu/log:/usr/src/wwwentu/log" \
+          --publish="80:4000" \
+          argoroots/wwwentu
+ExecStop=/usr/bin/docker stop wwwentu
+
+[X-Fleet]
+Conflicts=wwwentu*
+MachineMetadata=public_ip=
