@@ -1,5 +1,5 @@
 {
-    "private": true,
+    "private": false,
     "name": "www-entu",
     "version": "0.1.0",
     "description": "entu.ee webpage engine",

@@ -12,6 +12,7 @@ var random  = require('randomstring')
 var bparser = require('body-parser')
 var debug   = require('debug')('app:' + path.basename(__filename).replace('.js', ''))
 
+debug('Loading Entu web ...')
 
 
 // global variables (and list of all used environment variables)
@@ -19,7 +20,10 @@ APP_DEBUG     = process.env.DEBUG
 APP_PORT      = process.env.PORT || 3000
 APP_LOG_DIR   = process.env.LOGDIR || __dirname + '/log'
 APP_COOKIE_SECRET = process.env.COOKIE_SECRET || random.generate(16)
-APP_ENTU_URL  = process.env.ENTU_URL || 'https://saal.entu.ee/api2'
+APP_ENTU_URL  = process.env.ENTU_URL
+if (!process.env.ENTU_URL) throw '"ENTU_URL" missing in environment'
+WWW_ROOT_EID  = process.env.WWW_ROOT_EID
+if (!process.env.WWW_ROOT_EID) throw '"WWW_ROOT_EID" missing in environment'
 APP_ENTU_USER = process.env.ENTU_USER
 APP_ENTU_KEY  = process.env.ENTU_KEY
 

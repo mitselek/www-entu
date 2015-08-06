@@ -72,6 +72,8 @@ exports.get_entities = function(parent_entity_id, definition, auth_id, auth_toke
         if(error) return callback(error)
         if(response.statusCode !== 200 || !body.result) return callback(new Error(op.get(body, 'error', body)))
 
+        // debug(JSON.stringify(body, null, '  '))
+
         var entities = []
         async.each(op.get(body, loop, []), function(e, callback) {
             get_entity(e.id, auth_id, auth_token, function(error, entity) {
@@ -80,11 +82,63 @@ exports.get_entities = function(parent_entity_id, definition, auth_id, auth_toke
                 entities.push(entity)
                 callback()
             })
-        }, function(error){
+        }, function gotEntities(error){
             if(error) return callback(error)
 
             callback(null, entities)
         })
+    })
+}
+
+
+
+//Get childs by parent entity id and/or by definition
+exports.get_childs = function get_childs(parent_entity_id, definition, auth_id, auth_token, callback) {
+    if (!parent_entity_id) callback(new Error('Missing "parent_entity_id"'))
+    var url = '/entity-' + parent_entity_id + '/childs'
+    var qs = definition ? {definition: definition} : {}
+    var headers = (auth_id && auth_token) ? {'X-Auth-UserId': auth_id, 'X-Auth-Token': auth_token} : {}
+
+    debug(parent_entity_id, definition)
+
+    request.get({url: APP_ENTU_URL + url, qs: qs, headers: headers, strictSSL: true, json: true}, function(error, response, body) {
+        if(error) return callback(error)
+        if(response.statusCode !== 200 || !body.result) return callback(new Error(op.get(body, 'error', body)))
+
+        var definitions = Object.keys(body.result)
+        var childs = []
+        async.each(
+            definitions,
+            function doLoop(definition, callback) {
+                var loop = ['result', definition, 'entities']
+                debug(loop)
+                async.each(op.get(body, loop, []), function(e, callback) {
+                    debug(e)
+                    get_entity(e.id, auth_id, auth_token, function(error, child_e) {
+                        if(error) return callback(error)
+
+                        child_e.set('display', {name: e.name, info: e.info})
+                        debug(child_e)
+
+                        childs.push(child_e)
+                        callback()
+                    })
+                }, function gotByDef(error) {
+                    if(error) return callback(error)
+                    debug('endInnerLoop')
+                    callback(null)
+                })
+            },
+            function endLoop(error) {
+                if(error) return callback(error)
+                debug('endDefLoop')
+
+                // debug(JSON.stringify(body, null, '  '))
+                callback(null, childs)
+            }
+        )
+        // debug(JSON.stringify(body, null, '  '))
+
     })
 }
 
