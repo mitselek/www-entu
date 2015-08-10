@@ -4,6 +4,7 @@ var router  = express.Router()
 var path    = require('path')
 var debug   = require('debug')('app:' + path.basename(__filename).replace('.js', ''))
 var async   = require('async')
+var op      = require('object-path')
 
 var entu    = require('./entu')
 
@@ -13,75 +14,74 @@ var entu    = require('./entu')
 router.get('/', function(req, res, next) {
     debug('Loading "' + req.url + '"')
 
-    async.parallel({
-        root_entity: function(callback) {
-            entu.get_entity(WWW_ROOT_EID, null, null, function(error, page_entity) {
-                if(error) return next(error)
-                if(page_entity.get('jade.value')) {
-                    fs.createWriteStream('./views/e_' + WWW_ROOT_EID + '.jade').write(page_entity.get('jade.value'))
+    var page_eid = WWW_ROOT_EID
+
+    if (req.query['page']) {
+        // debug(req.query['page'])
+        page_eid = req.query['page']
+    }
+    // debug(req.query())
+
+    var root_entity = op(require('../pagecache/' + WWW_ROOT_EID + '.json'))
+    var page_entity = op(require('../pagecache/' + page_eid + '.json'))
+
+    var async_tasks = []
+    async_tasks.push(function(callback) {
+        debug('read root')
+        // debug(JSON.stringify(root_entity.get('child_ids'), null, '  '))
+        var root_childs = []
+        async.each(root_entity.get('child_ids'),
+            function(child_id, callback) {
+                root_childs.push(op(require('../pagecache/' + child_id + '.json')))
+                callback()
+            },
+            function(error) {
+                if(error) {
+                    debug(error)
                 }
-                callback(null, page_entity)
-            })
-        },
-        childs: function(callback) {
-            entu.get_childs(WWW_ROOT_EID, null, null, null, function(error, childs) {
-                if(error) return next(error)
-
-                callback(null, childs)
-            })
-        }
-    },
-    function results(error, results) {
-        debug('results:', results)
-        if(error) return next(error)
-
-        var template = 'index'
-        if(results.root_entity.get('jade.value')){
-            template = 'e_' + WWW_ROOT_EID
-        }
-
-        res.render(template, {
-            entity: results.root_entity,
-            childs: results.childs
-        })
+                root_entity.set('childs', root_childs)
+                // debug('read root done', root_entity.get('_display'))
+                // debug('read root done', root_entity.get('_childs')[0].get('_display'))
+                callback()
+                // debug(JSON.stringify(root_entity.get(), null, '  '))
+            }
+        )
     })
-
-    // res.render('index')
-})
-
-
-
-// GET partners page
-router.get('/partners', function(req, res, next) {
-    entu.get_entities(null, 'partner', null, null, function(error, partners) {
-        if(error) return next(error)
-
-        res.render('partners', {
-            partners: partners
+    if (page_eid != WWW_ROOT_EID) {
+        async_tasks.push(function(callback) {
+            debug('read page')
+            var page_childs = []
+            async.each(page_entity.get('child_ids'),
+                function(child_id, callback) {
+                    page_childs.push(op(require('../pagecache/' + child_id + '.json')))
+                    callback(null)
+                },
+                function(error) {
+                    if(error) {
+                        debug(error)
+                    }
+                    page_entity.set('childs', page_childs)
+                    callback()
+                }
+            )
         })
-    })
-})
+    }
 
-
-
-// GET team page
-router.get('/team', function(req, res, next) {
-    entu.get_entities(612, 'person', null, null, function(error, team) {
-        if(error) return next(error)
-
-        res.render('team', {
-            team: team
+    async.parallel(async_tasks, function done() {
+        // res.end('readyzzz!')
+        res.render('e_' + page_eid, {
+            root: root_entity,
+            page: page_entity
+        }, function(error, data) {
+            // debug('finished', data)
+            if (error) {
+                debug(error)
+            }
+            res.end(data)
+            debug('Rendered ' + 'e_' + page_eid)
         })
     })
 })
-
-
-
-// GET terms of service page
-router.get('/tos', function(req, res, next) {
-    res.render('tos')
-})
-
 
 
 module.exports = router

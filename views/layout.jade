@@ -12,7 +12,7 @@ html
         if keywords
             meta(name='keywords', content=keywords.join(', '))
 
-        title= (title && title !== 'WWW-Entu') ? title + ' - WWW-Entu' : 'WWW-Entu'
+        title= (title && title !== 'Kanuti Gildi Saal') ? title + ' - Kanuti Gildi Saal' : 'Kanuti Gildi Saal'
 
         link(rel='stylesheet', type='text/css', href='https://fonts.googleapis.com/css?family=Raleway')
         link(rel='stylesheet', type='text/css', href='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css')
@@ -28,7 +28,7 @@ html
             m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
             })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
 
-            ga('create', 'UA-260765-34', 'auto');
+            ga('create', 'UA-xxxxxx-xx', 'auto');
             ga('send', 'pageview');
 
         script(src='https://code.jquery.com/jquery-2.1.4.min.js')
@@ -46,15 +46,13 @@ html
                                 span.icon-bar
                                 span.icon-bar
                             a.navbar-brand(href='/')
-                                img(src='/images/logo-text-hr.png', alt='WWW-Entu logo')
+                                img(src='/images/saal_logo.svg', alt='Kanuti Gildi Saal logo')
+                                p= season
                         .collapse.navbar-collapse(id='bs-example-navbar-collapse-1')
                             ul.nav.navbar-nav.navbar-right
-                                li
-                                    a(href='/help/requests') Requests
-                                li
-                                    a(href='/help/offers') Offers
-                                li
-                                    a(href='/users') Users
+
+                                block navigation
+
                                 if user
                                     li
                                         a(href='/users/me') Me
